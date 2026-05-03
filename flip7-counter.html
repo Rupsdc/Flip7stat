@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip 7 — Card Counter</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #eeede9;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --text-tertiary: #a0a09a;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.22);
+    --blue-bg: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-text: #0C447C;
+    --green-bg: #EAF3DE;
+    --green-text: #3B6D11;
+    --green-border: #97C459;
+    --amber-bg: #FAEEDA;
+    --amber-text: #854F0B;
+    --amber-border: #EF9F27;
+    --red-bg: #FCEBEB;
+    --red-text: #A32D2D;
+    --red-border: #F09595;
+    --red-bar: #E24B4A;
+    --teal-bar: #1D9E75;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #272724;
+      --bg-tertiary: #2e2e2b;
+      --text-primary: #f0efe9;
+      --text-secondary: #9a9a94;
+      --text-tertiary: #5a5a56;
+      --border: rgba(255,255,255,0.1);
+      --border-strong: rgba(255,255,255,0.2);
+      --blue-bg: #0C447C;
+      --blue-light: #0C447C;
+      --blue-text: #B5D4F4;
+      --green-bg: #173404;
+      --green-text: #C0DD97;
+      --green-border: #3B6D11;
+      --amber-bg: #412402;
+      --amber-text: #FAC775;
+      --amber-border: #854F0B;
+      --red-bg: #501313;
+      --red-text: #F7C1C1;
+      --red-border: #A32D2D;
+      --red-bar: #E24B4A;
+      --teal-bar: #1D9E75;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 760px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+  header span { font-size: 13px; color: var(--text-secondary); }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+  .ctrl-group label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+  input[type=number] {
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 6px 10px;
+    font-size: 13px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    width: 80px;
+  }
+  .info-text { font-size: 12px; color: var(--text-secondary); padding-bottom: 6px; }
+
+  .btn-row { display: flex; gap: 8px; margin-left: auto; }
+  button {
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 6px 14px;
+    font-size: 13px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background .1s;
+  }
+  button:hover { background: var(--bg-secondary); }
+  button:active { transform: scale(0.98); }
+
+  .tab-row { display: flex; gap: 4px; margin-bottom: 1rem; }
+  .tab {
+    padding: 5px 12px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    transition: background .1s;
+  }
+  .tab.active { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 500; }
+
+  .section-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+  .card-btn {
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 6px 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background .1s;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .card-btn:hover { background: var(--bg-secondary); }
+  .card-btn.in-hand { background: var(--blue-bg); border-color: var(--blue-bg); color: var(--blue-light); }
+  .card-btn.seen { background: var(--bg-tertiary); border-color: var(--border); color: var(--text-tertiary); text-decoration: line-through; }
+  .card-btn .badge {
+    position: absolute; top: -5px; right: -5px;
+    background: #D85A30; color: #FAECE7;
+    border-radius: 10px; font-size: 9px; padding: 1px 4px; font-weight: 600;
+  }
+  .card-btn.in-hand .badge { background: var(--blue-light); color: var(--blue-bg); }
+
+  .special-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+    margin-bottom: 1.5rem;
+  }
+  .special-btn {
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 7px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.3;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background .1s;
+  }
+  .special-btn:hover { background: var(--bg-secondary); }
+  .special-btn.seen { background: var(--bg-tertiary); color: var(--text-tertiary); text-decoration: line-through; }
+  .special-count { font-size: 9px; color: var(--text-secondary); display: block; margin-top: 2px; }
+
+  .hand-display {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    min-height: 36px; align-items: center; margin-bottom: 1rem;
+  }
+  .hand-card {
+    background: var(--blue-bg); color: var(--blue-light);
+    border-radius: var(--radius-md); padding: 4px 10px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: opacity .1s;
+  }
+  .hand-card:hover { opacity: .8; }
+  .hand-card .x { font-size: 10px; opacity: .7; }
+  .empty-hand { font-size: 12px; color: var(--text-tertiary); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .stat-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 10px 12px; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .stat-val.danger { color: var(--red-text); }
+  .stat-val.safe { color: var(--green-text); }
+
+  .verdict {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: var(--radius-md);
+    font-size: 14px; font-weight: 500; margin-bottom: 1rem;
+    border: 0.5px solid;
+  }
+  .verdict.hit { background: var(--green-bg); color: var(--green-text); border-color: var(--green-border); }
+  .verdict.stay { background: var(--amber-bg); color: var(--amber-text); border-color: var(--amber-border); }
+  .verdict.risky { background: var(--red-bg); color: var(--red-text); border-color: var(--red-border); }
+  .verdict-icon { font-size: 16px; }
+
+  .panel {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .panel h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+
+  .prob-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .prob-table th {
+    text-align: left; color: var(--text-secondary);
+    font-weight: 400; font-size: 11px; padding: 4px 6px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .prob-table td { padding: 5px 6px; border-bottom: 0.5px solid var(--border); color: var(--text-primary); }
+  .prob-table tr:last-child td { border-bottom: none; }
+
+  .bar-wrap { width: 100%; background: var(--bg-secondary); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 8px; border-radius: 4px; transition: width .3s; }
+
+  .hint { font-size: 11px; color: var(--text-tertiary); margin-bottom: 1rem; }
+
+  @media (max-width: 480px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .btn-row { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Flip 7 — card counter</h1>
+    <span id="removed-count">0 cards tracked</span>
+  </header>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label>Deck size</label>
+      <input type="number" id="deck-size" value="94" min="1" max="94" oninput="updateDeckSize(this.value)">
+    </div>
+    <div class="ctrl-group">
+      <label>&nbsp;</label>
+      <div class="info-text" id="cards-left-info">94 cards remaining in deck</div>
+    </div>
+    <div class="btn-row">
+      <button onclick="resetAll()">Reset round</button>
+      <button onclick="resetHand()">Clear hand</button>
+    </div>
+  </div>
+
+  <div class="tab-row">
+    <div class="tab active" onclick="setTab('number', this)">Number cards</div>
+    <div class="tab" onclick="setTab('special', this)">Special cards</div>
+  </div>
+
+  <div id="tab-number">
+    <div class="section-label">Left-click → add to hand &nbsp;·&nbsp; Right-click → mark as seen</div>
+    <div class="card-grid" id="number-grid"></div>
+  </div>
+
+  <div id="tab-special" style="display:none;">
+    <div class="section-label">Right-click → mark one as seen (removed from deck)</div>
+    <div class="special-grid" id="special-grid"></div>
+  </div>
+
+  <div class="section-label">Your hand <span class="hint" style="text-transform:none; letter-spacing:0; font-size:11px;">(click a card to remove it)</span></div>
+  <div class="hand-display" id="hand-display"></div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Your score so far</div>
+      <div class="stat-val" id="your-score">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cards in hand</div>
+      <div class="stat-val" id="hand-count">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Bust chance</div>
+      <div class="stat-val danger" id="bust-chance">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Safe draw chance</div>
+      <div class="stat-val safe" id="safe-chance">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cards left in deck</div>
+      <div class="stat-val" id="cards-left">94</div>
+    </div>
+  </div>
+
+  <div id="verdict-box"></div>
+
+  <div class="panel">
+    <h3>Draw probabilities for each card type</h3>
+    <table class="prob-table">
+      <thead>
+        <tr>
+          <th>Card</th>
+          <th>Remaining</th>
+          <th>Chance to draw</th>
+          <th>Bust if drawn?</th>
+          <th style="width:100px;">Probability</th>
+        </tr>
+      </thead>
+      <tbody id="prob-body"></tbody>
+    </table>
+  </div>
+
+  <p style="font-size:11px; color:var(--text-tertiary); text-align:center; padding: 1rem 0;">
+    Flip 7 card counter · Right-click number cards to track other players' draws
+  </p>
+</div>
+
+<script>
+const DECK = { 0:1,1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,10:10,11:11,12:12 };
+const SPECIALS = [
+  { id:'freeze', name:'Freeze', count:3 },
+  { id:'flip3', name:'Flip three', count:3 },
+  { id:'sc', name:'Second chance', count:3 },
+  { id:'mod2p', name:'Score +2', count:2 },
+  { id:'mod4p', name:'Score +4', count:4 },
+  { id:'mod6p', name:'Score +6', count:2 },
+  { id:'mod8p', name:'Score +8', count:2 },
+  { id:'mod10p', name:'Score +10', count:2 },
+  { id:'mod4b', name:'Score +4 (bonus)', count:1 },
+  { id:'modx2', name:'Score ×2', count:2 },
+];
+
+let state = { hand:{}, seen:{}, seenSpecials:{}, deckBase:94 };
+
+function remainingOfNumber(n) {
+  return Math.max(0, DECK[n] - (state.hand[n]||0) - (state.seen[n]||0));
+}
+function totalRemaining() {
+  let t=0;
+  for(let n=0;n<=12;n++) t+=remainingOfNumber(n);
+  for(let s of SPECIALS) t+=Math.max(0,s.count-(state.seenSpecials[s.id]||0));
+  return t;
+}
+function handNumbers() {
+  return Object.keys(state.hand).filter(n=>state.hand[n]>0).map(Number);
+}
+function currentScore() {
+  let s=0;
+  for(let [n,c] of Object.entries(state.hand)) s+=Number(n)*c;
+  return s;
+}
+function bustOnDraw(n) { return !!(state.hand[n] && state.hand[n]>0); }
+
+function buildNumberGrid() {
+  const grid=document.getElementById('number-grid');
+  grid.innerHTML='';
+  for(let n=0;n<=12;n++){
+    const btn=document.createElement('div');
+    btn.className='card-btn';
+    btn.title='Left-click: add to hand | Right-click: mark as seen';
+    const inHand=state.hand[n]||0;
+    const seen=state.seen[n]||0;
+    const rem=remainingOfNumber(n);
+    btn.innerHTML=`${n}<br><span style="font-size:9px;opacity:.7;">${rem}/${DECK[n]}</span>`;
+    if(inHand>0){ btn.classList.add('in-hand'); btn.innerHTML+=`<span class="badge">${inHand}</span>`; }
+    else if(seen>=DECK[n]) btn.classList.add('seen');
+    btn.addEventListener('click',()=>addToHand(n));
+    btn.addEventListener('contextmenu',e=>{e.preventDefault();markSeen(n);});
+    grid.appendChild(btn);
+  }
+}
+
+function buildSpecialGrid() {
+  const grid=document.getElementById('special-grid');
+  grid.innerHTML='';
+  for(let s of SPECIALS){
+    const btn=document.createElement('div');
+    btn.className='special-btn';
+    btn.title='Right-click to mark one as seen';
+    const seen=state.seenSpecials[s.id]||0;
+    const rem=Math.max(0,s.count-seen);
+    btn.innerHTML=`${s.name}<span class="special-count">${rem}/${s.count} remaining</span>`;
+    if(rem===0) btn.classList.add('seen');
+    btn.addEventListener('contextmenu',e=>{e.preventDefault();markSeenSpecial(s.id,s.count);});
+    grid.appendChild(btn);
+  }
+}
+
+function addToHand(n) {
+  if(remainingOfNumber(n)<=0) return;
+  state.hand[n]=(state.hand[n]||0)+1;
+  update();
+}
+function removeFromHand(n) {
+  if(!state.hand[n]) return;
+  state.hand[n]--;
+  if(state.hand[n]<=0) delete state.hand[n];
+  update();
+}
+function markSeen(n) {
+  let total=(state.seen[n]||0)+(state.hand[n]||0);
+  if(total>=DECK[n]) return;
+  state.seen[n]=(state.seen[n]||0)+1;
+  update();
+}
+function markSeenSpecial(id,maxCount) {
+  let seen=state.seenSpecials[id]||0;
+  if(seen<maxCount) state.seenSpecials[id]=seen+1;
+  update();
+}
+function updateDeckSize(v) {
+  state.deckBase=Math.max(1,parseInt(v)||94);
+  update();
+}
+function resetAll() { state.hand={}; state.seen={}; state.seenSpecials={}; update(); }
+function resetHand() { state.hand={}; update(); }
+
+function setTab(tab, el) {
+  document.getElementById('tab-number').style.display=tab==='number'?'':'none';
+  document.getElementById('tab-special').style.display=tab==='special'?'':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function update() {
+  buildNumberGrid();
+  buildSpecialGrid();
+  updateHand();
+  updateStats();
+  updateProbTable();
+}
+
+function updateHand() {
+  const div=document.getElementById('hand-display');
+  const nums=handNumbers();
+  if(nums.length===0){ div.innerHTML='<span class="empty-hand">No cards yet — click number cards above to add them</span>'; return; }
+  div.innerHTML='';
+  for(let n of nums.sort((a,b)=>a-b)){
+    for(let i=0;i<state.hand[n];i++){
+      const c=document.createElement('div');
+      c.className='hand-card';
+      c.innerHTML=`${n} <span class="x">✕</span>`;
+      c.title='Click to remove';
+      c.addEventListener('click',()=>removeFromHand(n));
+      div.appendChild(c);
+    }
+  }
+}
+
+function updateStats() {
+  const left=totalRemaining();
+  const score=currentScore();
+  const handTotal=handNumbers().reduce((a,n)=>a+(state.hand[n]||0),0);
+  document.getElementById('your-score').textContent=score;
+  document.getElementById('hand-count').textContent=handTotal;
+  document.getElementById('cards-left').textContent=left;
+  document.getElementById('cards-left-info').textContent=`${left} cards remaining in deck`;
+
+  let totalRemoved=0;
+  for(let n=0;n<=12;n++) totalRemoved+=(state.hand[n]||0)+(state.seen[n]||0);
+  for(let s of SPECIALS) totalRemoved+=(state.seenSpecials[s.id]||0);
+  document.getElementById('removed-count').textContent=`${totalRemoved} cards tracked`;
+
+  if(left===0||handNumbers().length===0){
+    document.getElementById('bust-chance').textContent='—';
+    document.getElementById('safe-chance').textContent='—';
+    document.getElementById('verdict-box').innerHTML='';
+    return;
+  }
+  let bustCount=0;
+  for(let n=0;n<=12;n++) if(bustOnDraw(n)) bustCount+=remainingOfNumber(n);
+  const bustPct=left>0?(bustCount/left*100):0;
+  const safePct=100-bustPct;
+  document.getElementById('bust-chance').textContent=bustPct.toFixed(1)+'%';
+  document.getElementById('safe-chance').textContent=safePct.toFixed(1)+'%';
+
+  const vbox=document.getElementById('verdict-box');
+  let vclass,vicon,vtext;
+  if(bustPct===0){ vclass='hit';vicon='✓';vtext='No bust risk at all — draw is completely safe.'; }
+  else if(bustPct<15){ vclass='hit';vicon='↑';vtext=`Low bust risk (${bustPct.toFixed(1)}%) — drawing another card is the right play.`; }
+  else if(bustPct<30){ vclass='stay';vicon='~';vtext=`Moderate risk (${bustPct.toFixed(1)}%) — consider staying if your score is above 30.`; }
+  else if(bustPct<50){ vclass='stay';vicon='!';vtext=`High risk (${bustPct.toFixed(1)}%) — staying is usually the smart move.`; }
+  else{ vclass='risky';vicon='✕';vtext=`Very high bust risk (${bustPct.toFixed(1)}%) — strongly recommend staying.`; }
+  vbox.innerHTML=`<div class="verdict ${vclass}"><span class="verdict-icon">${vicon}</span><span>${vtext}</span></div>`;
+}
+
+function updateProbTable() {
+  const tbody=document.getElementById('prob-body');
+  const left=totalRemaining();
+  tbody.innerHTML='';
+  for(let n=0;n<=12;n++){
+    const rem=remainingOfNumber(n);
+    const pct=left>0?(rem/left*100):0;
+    const isBust=bustOnDraw(n);
+    const barColor=isBust?'var(--red-bar)':'var(--teal-bar)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="font-weight:500;">${n}${n===0?' (zero)':''}</td>
+      <td>${rem}/${DECK[n]}</td>
+      <td>${pct.toFixed(1)}%</td>
+      <td style="color:${isBust?'var(--red-text)':'var(--text-secondary)'};font-size:12px;">${isBust?'YES — bust!':'Safe'}</td>
+      <td><div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,pct)}%;background:${barColor};"></div></div></td>`;
+    tbody.appendChild(tr);
+  }
+  let specRem=0;
+  for(let s of SPECIALS) specRem+=Math.max(0,s.count-(state.seenSpecials[s.id]||0));
+  const specPct=left>0?(specRem/left*100):0;
+  const trSpec=document.createElement('tr');
+  trSpec.style.borderTop='1px solid var(--border)';
+  trSpec.innerHTML=`
+    <td style="font-weight:500;color:var(--text-secondary);font-size:12px;">Special / action</td>
+    <td style="font-size:12px;">${specRem}/21</td>
+    <td style="font-size:12px;">${specPct.toFixed(1)}%</td>
+    <td style="font-size:12px;color:var(--text-secondary);">Never bust</td>
+    <td><div class="bar-wrap"><div class="bar-fill" style="width:${Math.min(100,specPct)}%;background:#888780;"></div></div></td>`;
+  tbody.appendChild(trSpec);
+}
+
+update();
+</script>
+</body>
+</html>
